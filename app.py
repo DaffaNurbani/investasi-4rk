@@ -30,8 +30,8 @@ def runge_kutta_rk4(y0, r, t0, tn, h):
 # ---------------------
 # Tampilan UI
 # ---------------------
-st.set_page_config(page_title="Prediksi Investasi RK4", layout="centered")
-st.markdown("<h1 style='text-align: center; color: navy;'>Prediksi Tabungan/Investasi dengan Metode Runge-Kutta RK4</h1>", unsafe_allow_html=True)
+st.set_page_config(page_title="Cuanalystic", layout="centered")
+st.markdown("<h1 style='text-align: center; color: #8FBC8F;'>Cuanalystic Metode Runge-Kutta RK4 </h1>", unsafe_allow_html=True)
 
 # Layout input 2 kolom
 col1, col2 = st.columns(2)
@@ -42,27 +42,38 @@ with col2:
     bunga = st.number_input("Suku Bunga per Tahun (%)", value=5.0)
     step = st.number_input("Langkah Perhitungan (h)", value=1.0)
 
+# Input Inflasi
+inflasi = st.number_input("Tingkat Inflasi per Tahun (%)", value=2.5)
+
 # Tombol Prediksi
 if st.button("Hitung Prediksi"):
     r = bunga / 100
     t_vals, y_vals = runge_kutta_rk4(y0, r, 0, waktu, step)
 
+    # Penyesuaian inflasi
+    inflasi_decimal = inflasi / 100
+    y_vals_riil = [y / ((1 + inflasi_decimal) ** t) for y, t in zip(y_vals, t_vals)]
+
     # Hasil akhir
-    st.success(f"Saldo akhir setelah {waktu} tahun: Rp {y_vals[-1]:,.2f}")
+    st.success(f"Saldo akhir nominal setelah {waktu} tahun: Rp {y_vals[-1]:,.2f}")
+    st.info(f"Saldo akhir riil setelah {waktu} tahun (dengan inflasi {inflasi}%): Rp {y_vals_riil[-1]:,.2f}")
 
     # Tabel hasil
     df = pd.DataFrame({
         "Tahun": t_vals,
-        "Saldo (Rp)": y_vals
+        "Saldo Nominal (Rp)": [f"Rp {val:,.2f}".replace('.', ',').replace(',', '.') for val in y_vals],
+        "Saldo Riil (Rp)": [f"Rp {val_riil:,.2f}".replace('.', ',').replace(',', '.') for val_riil in y_vals_riil]
     })
     st.dataframe(df)
 
     # Grafik
     fig, ax = plt.subplots()
-    ax.plot(t_vals, y_vals, marker='o', color='green')
+    ax.plot(t_vals, y_vals, marker='o', color='green', label='Saldo Nominal')
+    ax.plot(t_vals, y_vals_riil, marker='x', color='blue', label='Saldo Riil')
     ax.set_xlabel("Tahun")
     ax.set_ylabel("Saldo (Rp)")
     ax.set_title("Pertumbuhan Investasi")
+    ax.legend()
     st.pyplot(fig)
 
     # Download Excel
